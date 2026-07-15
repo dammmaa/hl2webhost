@@ -1,0 +1,4 @@
+*To run this HL2 project, use this command :* 
+python -m http.server 8000 --bind 127.0.0.1
+this project is about porting HL2 in a web browser
+this is originally from https://hl2.slqnt.dev/

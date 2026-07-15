@@ -1,0 +1,154 @@
+﻿<!doctypehtml>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+    <title>Half-Life 2 & Portal 1 launcher</title>
+    <link href="manifest.webmanifest" rel="manifest">
+    <meta content="#111111" name="theme-color">
+    <link href="assets/icon-192.png" rel="apple-touch-icon">
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #06070a;
+            --panel: rgba(255, 255, 255, 0.06);
+            --panel-strong: rgba(255, 255, 255, 0.12);
+            --text: #f5f7fb;
+            --muted: #9ea8b8;
+            --accent: #5ce1e6;
+            --accent-2: #ffb347;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(145deg, #06070a 0%, #101622 100%);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .app-shell { max-width: 1160px; margin: 0 auto; padding: 24px 18px 40px; }
+        .hero { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+        #emscripten_logo { display: inline-block; width: 96px; height: auto; filter: drop-shadow(0 8px 18px rgba(0,0,0,0.35)); }
+        .hero__copy h1 { margin: 0 0 6px; font-size: clamp(1.5rem, 2.4vw, 2.4rem); }
+        .hero__copy p { margin: 0; color: var(--muted); max-width: 700px; line-height: 1.5; }
+        .game-select { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .game-card { position: relative; overflow: hidden; border-radius: 18px; background: var(--panel); border: 1px solid rgba(255,255,255,0.08); cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease; box-shadow: 0 10px 28px rgba(0,0,0,0.25); }
+        .game-card:hover { transform: translateY(-2px); border-color: rgba(92,225,230,0.45); background: var(--panel-strong); }
+        .game-card img { display: block; width: 100%; height: 220px; object-fit: cover; }
+        .game-card__body { padding: 14px 16px 16px; }
+        .game-card__body h2 { margin: 0 0 6px; font-size: 1.1rem; }
+        .game-card__body p { margin: 0; color: var(--muted); font-size: 0.92rem; line-height: 1.45; }
+        .portal-card { border-color: rgba(255,179,71,0.24); }
+        .portal-card:hover { border-color: rgba(255,179,71,0.55); }
+        .portal-panel { background: linear-gradient(135deg, rgba(255,179,71,0.16), rgba(92,225,230,0.12)); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 16px; margin-bottom: 20px; box-shadow: 0 10px 28px rgba(0,0,0,0.2); }
+        .portal-panel h2 { margin: 0 0 6px; font-size: 1.1rem; }
+        .portal-panel p { margin: 0 0 10px; color: var(--muted); line-height: 1.5; }
+        .voice-line-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+        .voice-line-btn { border: 0; border-radius: 999px; padding: 10px 14px; background: rgba(255,255,255,0.14); color: var(--text); cursor: pointer; transition: background 0.15s ease, transform 0.15s ease; }
+        .voice-line-btn:hover { background: rgba(92,225,230,0.18); transform: translateY(-1px); }
+        .portal-status { margin: 12px 0 0; color: #dce9ff; font-size: 0.95rem; }
+        .launcher-shell { background: rgba(5,8,12,0.72); border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); padding: 16px; box-shadow: 0 16px 40px rgba(0,0,0,0.28); }
+        .launcher-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+        .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
+        div.emscripten { text-align: center; }
+        div.emscripten_border { border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; overflow: hidden; background: #000; margin-top: 10px; }
+        canvas.emscripten { border: 0 none; background-color: #000; display: block; width: 100%; height: auto; min-height: 320px; }
+        .spinner { height: 28px; width: 28px; margin: 0; display: inline-block; vertical-align: top; animation: rotation .8s linear infinite; border-left: 4px solid #ebebeb; border-right: 4px solid #ebebeb; border-bottom: 4px solid #ebebeb; border-top: 4px solid var(--accent); border-radius: 100%; background-color: transparent; }
+        @keyframes rotation { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+        #status { display: inline-block; vertical-align: top; font-weight: 700; color: #dce8ff; flex: 1 1 220px; }
+        #progress { height: 18px; width: min(320px, 100%); border-radius: 999px; overflow: hidden; }
+        #controls { display: inline-flex; gap: 8px; align-items: center; justify-content: flex-end; }
+        #controls input { border: 0; border-radius: 999px; padding: 9px 12px; background: rgba(255,255,255,0.11); color: var(--text); cursor: pointer; }
+        body.pre-game #controls, body.pre-game #progress, body.pre-game #spinner, body.pre-game #status, body.pre-game .emscripten_border { display: none !important; }
+        @media (max-width: 760px) { .app-shell { padding: 16px 14px 28px; } .hero { flex-direction: column; align-items: flex-start; } .game-select { grid-template-columns: 1fr; } .game-card img { height: 180px; } .launcher-toolbar { align-items: flex-start; } }
+    </style>
+    <script src="https://analytics.proudparrot2.com/js/script.js" data-domain="hl2.slqnt.dev" defer></script>
+</head>
+<body class="pre-game">
+    <div class="app-shell">
+        <header class="hero">
+            <img alt="" src="assets/hl2.png" id="emscripten_logo">
+            <div class="hero__copy">
+                <h1>Half-Life 2 and Portal 1 launcher</h1>
+                <p>Choose a campaign, load the imported map data, and preview Portal 1 voice lines right in the browser.</p>
+            </div>
+        </header>
+        <div id="game-select" class="game-select">
+            <div class="game-card" data-game="hl2">
+                <img alt="Half-Life 2" src="assets/hl2wide.webp">
+                <div class="game-card__body"><h2>Half-Life 2</h2><p>Launch the original City 17 campaign and its web-loaded map data.</p></div>
+            </div>
+            <div class="game-card" data-game="ep1">
+                <img alt="Half-Life 2: Episode One" src="assets/ep1wide.webp">
+                <div class="game-card__body"><h2>Half-Life 2: Episode One</h2><p>Jump into the first Episode with the same local loading flow.</p></div>
+            </div>
+            <div class="game-card" data-game="ep2">
+                <img alt="Half-Life 2: Episode Two" src="assets/ep2wide.webp">
+                <div class="game-card__body"><h2>Half-Life 2: Episode Two</h2><p>Use the same responsive launcher for the second Episode.</p></div>
+            </div>
+            <div class="game-card portal-card" data-game="portal1">
+                <img alt="Portal 1" src="assets/portal1.webp">
+                <div class="game-card__body"><h2>Portal 1</h2><p>Preview Portal 1 voice lines locally and prepare for a full Portal engine bundle.</p></div>
+            </div>
+        </div>
+        <section id="portal-panel" class="portal-panel" hidden>
+            <h2>Portal 1 voice lines</h2>
+            <p>These lines play locally in the browser. If you add audio files under the Portal 1 assets folder, they will be used first; otherwise the browser fallback voice synth will handle them.</p>
+            <div class="voice-line-grid">
+                <button class="voice-line-btn" data-voice="the-cake-is-a-lie">The cake is a lie</button>
+                <button class="voice-line-btn" data-voice="test-chamber">Test chamber complete</button>
+                <button class="voice-line-btn" data-voice="portal-gun">Portal gun ready</button>
+            </div>
+            <p id="portal-status" class="portal-status">Choose a Portal 1 voice line to play it.</p>
+        </section>
+        <div id="loading-log" class="loading-log" hidden>
+            <div class="loading-log__header">Loading activity</div>
+            <ul id="loading-log-list" class="loading-log__list"></ul>
+        </div>
+
+        <div class="launcher-shell">
+            <div class="launcher-toolbar">
+                <div class="spinner" id="spinner"></div>
+                <div class="emscripten" id="status">Downloading...</div>
+                <div id="controls">
+                    <span><input onclick='document.getElementById("canvas").requestFullscreen().catch((()=>{}))' type="button" value="Fullscreen"></span>
+                    <span><input onclick="update()" type="button" value="Clear Cache" title="Clear saved files and update to the latest"></span>
+                </div>
+            </div>
+            <div class="emscripten"><progress hidden id="progress" max="100" value="0"></progress></div>
+            <div class="emscripten_border"><canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas></div>
+        </div>
+        <script>
+            var statusElement = document.getElementById("status"), progressElement = document.getElementById("progress"), spinnerElement = document.getElementById("spinner"), canvasElement = document.getElementById("canvas"), portalPanel = document.getElementById("portal-panel"), portalStatus = document.getElementById("portal-status");
+            canvasElement.addEventListener("webglcontextlost", (e => { alert("WebGL context lost. You will need to reload the page."), e.preventDefault() }), !1), canvasElement.addEventListener("keydown", (e => { "Tab" === e.key && e.preventDefault() })), canvasElement.widthNative = screen.availWidth, canvasElement.heightNative = screen.availHeight;
+            var Module = { locateFile: path => path, print(...e) { console.log(...e) }, canvas: canvasElement, setStatus(e) { if (Module.setStatus.last || (Module.setStatus.last = { time: Date.now(), text: "" }), e !== Module.setStatus.last.text) { var t = e.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/), s = Date.now(); t && s - Module.setStatus.last.time < 30 || (Module.setStatus.last.time = s, Module.setStatus.last.text = e, t ? (e = t[1], progressElement.value = 100 * parseInt(t[2]), progressElement.max = 100 * parseInt(t[4]), progressElement.hidden = !1, spinnerElement.hidden = !1) : (progressElement.value = null, progressElement.max = null, progressElement.hidden = !0, e || (spinnerElement.style.display = "none")), statusElement.innerHTML = e, window.reportLoadStep && window.reportLoadStep("Engine", e)) } }, totalDependencies: 0, monitorRunDependencies(e) { this.totalDependencies = Math.max(this.totalDependencies, e), Module.setStatus(e ? "Preparing... (" + (this.totalDependencies - e) + "/" + this.totalDependencies + ")" : "All downloads complete.") } };
+            function addLoadLogEntry(message, isActive) {
+                const log = document.getElementById("loading-log");
+                const list = document.getElementById("loading-log-list");
+                if (!log || !list) return;
+                log.hidden = false;
+                const entry = document.createElement("li");
+                entry.className = "loading-log__entry" + (isActive ? " is-active" : "");
+                entry.textContent = message;
+                list.appendChild(entry);
+                while (list.children.length > 10) list.removeChild(list.firstChild);
+            }
+            window.reportLoadStep = function(category, message) {
+                if (!message) return;
+                addLoadLogEntry(`${category}: ${message}`, true);
+                statusElement.innerText = `${category}: ${message}`;
+            };
+            function pickGame(e) { try { sessionStorage.setItem("ep", e) } catch (e) {} const gameSelect = document.getElementById("game-select"); if (gameSelect) gameSelect.style.display = "none"; if (portalPanel) portalPanel.hidden = e !== "portal1"; if (e === "portal1") { document.body.classList.add("pre-game"); if (portalStatus) portalStatus.textContent = "Portal 1 voice-line preview ready. Add the Portal 1 engine assets to turn this into a full launch."; window.reportLoadStep && window.reportLoadStep("Portal 1", "Voice-line preview ready"); return; } document.body.classList.remove("pre-game"); window.reportLoadStep && window.reportLoadStep("Game", e === "hl2" ? "Half-Life 2" : e === "ep1" ? "Episode One" : "Episode Two"); Module.__resolveGame(e) }
+            const portalVoiceLines = { "the-cake-is-a-lie": { label: "The cake is a lie", asset: "assets/portal1/voice-lines/the-cake-is-a-lie.mp3" }, "test-chamber": { label: "Test chamber complete", asset: "assets/portal1/voice-lines/test-chamber.mp3" }, "portal-gun": { label: "Portal gun ready", asset: "assets/portal1/voice-lines/portal-gun.mp3" } };
+            async function playPortalVoiceLine(voiceId) { const voiceLine = portalVoiceLines[voiceId]; if (!voiceLine) return; if (portalStatus) portalStatus.textContent = `Preparing ${voiceLine.label}...`; window.reportLoadStep && window.reportLoadStep("Portal 1 audio", voiceLine.label); const audio = document.getElementById("portal-voice-audio"); if (!audio) { const fallbackAudio = document.createElement("audio"); fallbackAudio.id = "portal-voice-audio"; fallbackAudio.preload = "auto"; document.body.appendChild(fallbackAudio); } const player = document.getElementById("portal-voice-audio"); try { const response = await fetch(voiceLine.asset, { cache: "no-store" }); if (response.ok) { player.src = voiceLine.asset; await player.play(); if (portalStatus) portalStatus.textContent = `Playing ${voiceLine.label} from ${voiceLine.asset}`; window.reportLoadStep && window.reportLoadStep("Portal 1 audio", `Playing ${voiceLine.label}`); return; } } catch (e) { console.warn("Portal audio asset missing or blocked", e); } if ("speechSynthesis" in window) { const utterance = new SpeechSynthesisUtterance(voiceLine.label); utterance.rate = 0.95; utterance.pitch = 1.05; window.speechSynthesis.cancel(); window.speechSynthesis.speak(utterance); if (portalStatus) portalStatus.textContent = `Using browser voice synthesis for ${voiceLine.label}`; window.reportLoadStep && window.reportLoadStep("Portal 1 audio", `Voice synthesis: ${voiceLine.label}`); } else if (portalStatus) { portalStatus.textContent = `${voiceLine.label} is ready to play once audio assets are added.`; window.reportLoadStep && window.reportLoadStep("Portal 1 audio", `Audio asset missing: ${voiceLine.label}`); } }
+            document.querySelectorAll(".game-card").forEach(card => { card.addEventListener("click", () => pickGame(card.dataset.game)); });
+            document.querySelectorAll(".voice-line-btn").forEach(button => { button.addEventListener("click", () => playPortalVoiceLine(button.dataset.voice)); });
+            async function update() { try { if (window.caches) for (const e of await caches.keys()) await caches.delete(e); if (navigator.serviceWorker) { const e = await navigator.serviceWorker.getRegistrations(); for (const t of e) await t.unregister() } } catch (e) { console.warn("cache clear failed", e) } window.reportLoadStep && window.reportLoadStep("Cache", "Clearing cached data"); location.reload() }
+            Module.__gameChoice = new Promise((e => { Module.__resolveGame = e })), Module.setStatus("Downloading..."), window.onerror = e => { Module.setStatus("Exception thrown, see JavaScript console"), spinnerElement.style.display = "none", Module.setStatus = e => { e && console.error("[post-exception status] " + e) } }, "serviceWorker" in navigator && navigator.serviceWorker.register("sw.js").then((() => navigator.serviceWorker.ready)).then((() => { self.crossOriginIsolated ? sessionStorage.removeItem("__coiReloaded") : sessionStorage.getItem("__coiReloaded") || (sessionStorage.setItem("__coiReloaded", "1"), location.reload()) })).catch((e => console.warn("SW registration failed", e)))
+        </script>
+        <script src="hl2_launcher.js?v=3"></script>
+        <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"be2a7ce5f46a4959baed5d8d22db2920","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+    </div>
+</body>
+</html>
